@@ -1,4 +1,4 @@
-resend>=0.6.0
+resend-python>=0.6.0
 python-dotenv>=1.0.0
 
 # TODO: Uncomment when implementing full newsletter functionality
