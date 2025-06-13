@@ -4,7 +4,7 @@ import logging
 import argparse
 from datetime import datetime
 from dotenv import load_dotenv
-import resend
+from resend import Resend
 # from utils import ensure_dir
 # from crawler.scrape import get_stories
 # from ai.summarize import summarize_stories
@@ -57,7 +57,7 @@ def main():
     
     # Initialize Resend client
     try:
-        resend_client = resend.Client(api_key)
+        resend_client = Resend(api_key)
         logger.debug("Resend client initialized successfully")
     except Exception as e:
         logger.error(f"Failed to initialize Resend client: {str(e)}")
