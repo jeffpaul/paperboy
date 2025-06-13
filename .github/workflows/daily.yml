@@ -1,13 +1,14 @@
 name: Daily Newsletter
 
 on:
+  workflow_dispatch:
   schedule:
     - cron: '0 8 * * *'  # Run at 8 AM UTC daily
-  workflow_dispatch:  # Allow manual triggers
 
 jobs:
   generate-newsletter:
     runs-on: ubuntu-latest
+    
     steps:
       - uses: actions/checkout@v4
       
@@ -20,45 +21,63 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip list  # Debug: Show installed packages
           
-      # TODO: Uncomment when ready to implement full newsletter functionality
-      # - name: Install MJML
-      #   run: |
-      #     npm install -g mjml
-      #     mjml --version  # Debug: Show MJML version
-          
-      # - name: Install and start Ollama
-      #   run: |
-      #     curl -fsSL https://ollama.com/install.sh | sh
-      #     ollama serve &
-      #     sleep 15  # Give Ollama more time to start
-      #     ollama list  # Debug: Show available models
-      #     ollama pull mixtral
-          
-      - name: Send test email
-        env:
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
-          EMAIL_TO: ${{ secrets.EMAIL_TO }}
-          PYTHONPATH: ${{ github.workspace }}
+      - name: Debug environment
         run: |
-          # Debug: Show environment
+          echo "Checking environment variables..."
+          if [ -n "${{ secrets.RESEND_API_KEY }}" ]; then
+            echo "RESEND_API_KEY is set"
+          else
+            echo "RESEND_API_KEY is not set"
+          fi
+          if [ -n "${{ secrets.EMAIL_FROM }}" ]; then
+            echo "EMAIL_FROM is set"
+          else
+            echo "EMAIL_FROM is not set"
+          fi
+          if [ -n "${{ secrets.EMAIL_TO }}" ]; then
+            echo "EMAIL_TO is set"
+          else
+            echo "EMAIL_TO is not set"
+          fi
+          
+      - name: Debug Python environment
+        run: |
           echo "Python version:"
           python --version
           echo "Current directory:"
           pwd
           echo "Directory contents:"
           ls -la
+          echo "Python path:"
+          python -c "import sys; print('\n'.join(sys.path))"
+          echo "Installed packages:"
+          pip list
           
-          # Run with verbose logging
-          python -u send_email.py --verbose
-          
-      - name: Check for errors
-        if: failure()
+      - name: Send test email
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
         run: |
-          echo "Workflow failed. Checking logs..."
-          echo "Directory contents:"
-          ls -la
-          echo "Output directory contents:"
-          ls -la output/ || echo "No output directory found"
+          echo "Running send_email.py with verbose logging..."
+          python send_email.py --verbose
+          
+      # TODO: Uncomment when ready to implement full newsletter functionality
+      # - name: Install MJML
+      #   run: npm install -g mjml
+      #   
+      # - name: Install Ollama
+      #   run: |
+      #     curl -fsSL https://ollama.com/install.sh | sh
+      #     ollama serve &
+      #     sleep 10  # Wait for Ollama to start
+      #     ollama pull mixtral
+      #     
+      # - name: Generate newsletter
+      #   env:
+      #     RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      #     EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+      #     EMAIL_TO: ${{ secrets.EMAIL_TO }}
+      #   run: |
+      #     python send_email.py
