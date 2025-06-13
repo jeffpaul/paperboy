@@ -20,15 +20,19 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip list  # Debug: Show installed packages
           
       - name: Install MJML
-        run: npm install -g mjml
-        
+        run: |
+          npm install -g mjml
+          mjml --version  # Debug: Show MJML version
+          
       - name: Install and start Ollama
         run: |
           curl -fsSL https://ollama.com/install.sh | sh
           ollama serve &
-          sleep 10  # Give Ollama time to start
+          sleep 15  # Give Ollama more time to start
+          ollama list  # Debug: Show available models
           ollama pull mixtral
           
       - name: Generate and send newsletter
@@ -36,9 +40,15 @@ jobs:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          PYTHONPATH: ${{ github.workspace }}
         run: |
-          # Activate Python environment
-          source ${{ env.pythonLocation }}/bin/activate
+          # Debug: Show environment
+          echo "Python version:"
+          python --version
+          echo "Current directory:"
+          pwd
+          echo "Directory contents:"
+          ls -la
           
           # Run with verbose logging
           python -u send_email.py --verbose
@@ -47,6 +57,11 @@ jobs:
         if: failure()
         run: |
           echo "Workflow failed. Checking logs..."
+          echo "Directory contents:"
+          ls -la
+          echo "Output directory contents:"
+          ls -la output/ || echo "No output directory found"
+          
           if [ -f "output/newsletter.html" ]; then
             echo "Newsletter HTML was generated:"
             cat output/newsletter.html
