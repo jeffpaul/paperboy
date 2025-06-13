@@ -4,6 +4,7 @@ from datetime import datetime
 import pytz
 from typing import Dict, List, Any
 import logging
+import nltk
 
 # Configure logging
 logging.basicConfig(
@@ -12,21 +13,21 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+def ensure_dir(directory: str) -> None:
+    """Ensure a directory exists, create if it doesn't."""
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+        logger.info(f"Created directory: {directory}")
+
 def load_config() -> Dict[str, Any]:
-    """Load and validate the configuration from config.yaml."""
+    """Load configuration from YAML file."""
     try:
         with open('config.yaml', 'r') as f:
             config = yaml.safe_load(f)
-        
-        # Validate required sections
-        required_sections = ['project', 'sources', 'email']
-        for section in required_sections:
-            if section not in config:
-                raise ValueError(f"Missing required section '{section}' in config.yaml")
-        
+        logger.info("Configuration loaded successfully")
         return config
     except Exception as e:
-        logger.error(f"Error loading config: {str(e)}")
+        logger.error(f"Error loading configuration: {str(e)}")
         raise
 
 def get_current_date() -> str:
@@ -37,6 +38,19 @@ def get_current_date() -> str:
 def get_current_year() -> str:
     """Get current year as string."""
     return datetime.now().strftime('%Y')
+
+def setup_nltk() -> None:
+    """Download required NLTK data."""
+    try:
+        nltk.download('punkt', quiet=True)
+        nltk.download('stopwords', quiet=True)
+        logger.info("NLTK data downloaded successfully")
+    except Exception as e:
+        logger.error(f"Error downloading NLTK data: {str(e)}")
+        raise
+
+# Initialize NLTK data when module is imported
+setup_nltk()
 
 def ensure_directory(directory: str) -> None:
     """Ensure a directory exists, create if it doesn't."""
