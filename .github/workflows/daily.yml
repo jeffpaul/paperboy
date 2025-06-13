@@ -2,47 +2,61 @@ name: Daily Newsletter
 
 on:
   schedule:
-    - cron: '0 11 * * *'  # Runs at 7am EST (11am UTC)
-  workflow_dispatch:  # Allows manual triggering
+    - cron: '0 8 * * *'  # Run at 8 AM UTC daily
+  workflow_dispatch:  # Allow manual triggers
 
 jobs:
   generate-newsletter:
     runs-on: ubuntu-latest
-    
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          
+      - name: Install MJML
+        run: npm install -g mjml
         
-    - name: Install Python dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        
-    - name: Install MJML
-      run: |
-        npm install -g mjml
-        
-    - name: Install Ollama
-      run: |
-        curl -fsSL https://ollama.com/install.sh | sh
-        
-    - name: Start Ollama service
-      run: |
-        ollama serve &
-        sleep 10  # Wait for service to start
-        
-    - name: Pull Mixtral model
-      run: |
-        ollama pull mixtral
-        
-    - name: Run newsletter generation
-      env:
-        RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-        EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
-        EMAIL_TO: ${{ secrets.EMAIL_TO }}
-      run: |
-        python send_email.py
+      - name: Install and start Ollama
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+          ollama serve &
+          sleep 10  # Give Ollama time to start
+          ollama pull mixtral
+          
+      - name: Generate and send newsletter
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+        run: |
+          # Activate Python environment
+          source ${{ env.pythonLocation }}/bin/activate
+          
+          # Run with verbose logging
+          python -u send_email.py --verbose
+          
+      - name: Check for errors
+        if: failure()
+        run: |
+          echo "Workflow failed. Checking logs..."
+          if [ -f "output/newsletter.html" ]; then
+            echo "Newsletter HTML was generated:"
+            cat output/newsletter.html
+          else
+            echo "No newsletter HTML was generated"
+          fi
+          
+          if [ -f "output/newsletter.txt" ]; then
+            echo "Newsletter text was generated:"
+            cat output/newsletter.txt
+          else
+            echo "No newsletter text was generated"
+          fi

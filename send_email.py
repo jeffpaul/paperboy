@@ -1,136 +1,92 @@
 import os
 import sys
 import logging
-from typing import Dict, Any
-import subprocess
-from jinja2 import Environment, FileSystemLoader
-from resend import Resend
+import argparse
+from datetime import datetime
 from dotenv import load_dotenv
+from resend import Resend
+from utils import ensure_dir
+from crawler.scrape import get_stories
+from ai.summarize import summarize_stories
+from templates.newsletter import generate_newsletter
 
-# Add current directory to path for imports
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from crawler.scrape import NewsScraper
-from ai.summarize import StorySummarizer
-from utils import load_config, get_current_date, get_current_year, ensure_directory
-
-# Configure logging
+# Set up logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
 )
 logger = logging.getLogger(__name__)
 
-class NewsletterGenerator:
-    def __init__(self):
-        self.config = load_config()
-        load_dotenv()  # Load environment variables
-        
-        # Initialize components
-        self.scraper = NewsScraper()
-        self.summarizer = StorySummarizer()
-        self.resend = Resend(api_key=os.getenv('RESEND_API_KEY'))
-        
-        # Ensure output directory exists
-        ensure_directory('output')
-        
-    def generate_html(self, stories: list) -> str:
-        """Generate HTML from MJML template."""
-        try:
-            # Load and render MJML template
-            env = Environment(loader=FileSystemLoader('templates'))
-            template = env.get_template('newsletter.mjml')
-            
-            # Render template with data
-            mjml_content = template.render(
-                stories=stories,
-                date=get_current_date(),
-                year=get_current_year()
-            )
-            
-            # Write MJML to temporary file
-            with open('output/temp.mjml', 'w') as f:
-                f.write(mjml_content)
-            
-            # Convert MJML to HTML
-            result = subprocess.run(
-                ['mjml', 'output/temp.mjml', '-o', 'output/newsletter.html'],
-                capture_output=True,
-                text=True
-            )
-            
-            if result.returncode != 0:
-                raise Exception(f"MJML conversion failed: {result.stderr}")
-            
-            # Read generated HTML
-            with open('output/newsletter.html', 'r') as f:
-                html_content = f.read()
-            
-            # Clean up temporary file
-            os.remove('output/temp.mjml')
-            
-            return html_content
-            
-        except Exception as e:
-            logger.error(f"Error generating HTML: {str(e)}")
-            raise
-
-    def send_newsletter(self, html_content: str) -> bool:
-        """Send the newsletter via Resend."""
-        try:
-            email_config = self.config['email']
-            
-            response = self.resend.emails.send({
-                "from": email_config['from'],
-                "to": email_config['to'],
-                "subject": email_config['subject'].replace('{{ date }}', get_current_date()),
-                "html": html_content
-            })
-            
-            logger.info(f"Newsletter sent successfully: {response}")
-            return True
-            
-        except Exception as e:
-            logger.error(f"Error sending newsletter: {str(e)}")
-            return False
-
-    def generate_and_send(self) -> bool:
-        """Main function to generate and send the newsletter."""
-        try:
-            # Scrape stories
-            logger.info("Scraping stories...")
-            stories = self.scraper.scrape_all_sources()
-            
-            if not stories:
-                logger.error("No stories found!")
-                return False
-            
-            # Summarize stories
-            logger.info("Summarizing stories...")
-            stories = self.summarizer.summarize_stories(stories)
-            
-            # Generate HTML
-            logger.info("Generating HTML...")
-            html_content = self.generate_html(stories)
-            
-            # Send newsletter
-            logger.info("Sending newsletter...")
-            success = self.send_newsletter(html_content)
-            
-            return success
-            
-        except Exception as e:
-            logger.error(f"Error in newsletter generation: {str(e)}")
-            return False
-
 def main():
-    """Main entry point."""
-    generator = NewsletterGenerator()
-    success = generator.generate_and_send()
+    parser = argparse.ArgumentParser(description='Generate and send daily newsletter')
+    parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
+    args = parser.parse_args()
     
-    if success:
-        logger.info("Newsletter process completed successfully!")
-    else:
-        logger.error("Newsletter process failed!")
+    if args.verbose:
+        logger.setLevel(logging.DEBUG)
+    
+    # Load environment variables
+    load_dotenv()
+    
+    # Get API key from environment
+    api_key = os.getenv('RESEND_API_KEY')
+    if not api_key:
+        logger.error("RESEND_API_KEY not found in environment variables")
+        sys.exit(1)
+    
+    # Initialize Resend client
+    resend = Resend(api_key)
+    
+    # Get email configuration
+    email_from = os.getenv('EMAIL_FROM')
+    email_to = os.getenv('EMAIL_TO')
+    
+    if not email_from or not email_to:
+        logger.error("EMAIL_FROM and EMAIL_TO must be set in environment variables")
+        sys.exit(1)
+    
+    logger.info("Starting newsletter generation...")
+    
+    # Get stories
+    logger.debug("Fetching stories...")
+    stories = get_stories()
+    logger.info(f"Found {len(stories)} stories")
+    
+    # Summarize stories
+    logger.debug("Summarizing stories...")
+    summarized_stories = summarize_stories(stories)
+    logger.info("Stories summarized successfully")
+    
+    # Generate newsletter
+    logger.debug("Generating newsletter...")
+    html_content, text_content = generate_newsletter(summarized_stories)
+    logger.info("Newsletter generated successfully")
+    
+    # Save to files
+    ensure_dir('output')
+    with open('output/newsletter.html', 'w') as f:
+        f.write(html_content)
+    with open('output/newsletter.txt', 'w') as f:
+        f.write(text_content)
+    logger.info("Newsletter saved to output directory")
+    
+    # Send email
+    logger.debug("Sending email...")
+    try:
+        response = resend.emails.send({
+            "from": email_from,
+            "to": email_to,
+            "subject": f"Your Daily 7 - {datetime.now().strftime('%B %d, %Y')}",
+            "html": html_content,
+            "text": text_content
+        })
+        logger.info("Email sent successfully")
+        logger.debug(f"Email response: {response}")
+    except Exception as e:
+        logger.error(f"Failed to send email: {str(e)}")
         sys.exit(1)
 
 if __name__ == "__main__":
