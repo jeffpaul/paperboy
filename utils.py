@@ -5,6 +5,9 @@ import pytz
 from typing import Dict, List, Any
 import logging
 import nltk
+import re
+from bs4 import BeautifulSoup
+import requests
 
 # Configure logging
 logging.basicConfig(
@@ -62,37 +65,51 @@ def clean_text(text: str) -> str:
     """Clean and normalize text content."""
     if not text:
         return ""
+    
+    # Remove HTML tags
+    text = BeautifulSoup(text, 'html.parser').get_text()
+    
     # Remove extra whitespace
-    text = ' '.join(text.split())
-    # Remove special characters that might cause issues
-    text = text.replace('\n', ' ').replace('\r', ' ')
+    text = re.sub(r'\s+', ' ', text)
+    
+    # Remove special characters but keep basic punctuation
+    text = re.sub(r'[^\w\s.,!?-]', '', text)
+    
     return text.strip()
 
 def extract_image_url(html_content: str) -> str:
     """Extract the first image URL from HTML content."""
-    from bs4 import BeautifulSoup
-    
-    soup = BeautifulSoup(html_content, 'html.parser')
-    
-    # Try to find og:image first
-    og_image = soup.find('meta', property='og:image')
-    if og_image and og_image.get('content'):
-        return og_image['content']
-    
-    # Fallback to first image in content
-    img = soup.find('img')
-    if img and img.get('src'):
-        return img['src']
-    
-    return ""
+    try:
+        soup = BeautifulSoup(html_content, 'html.parser')
+        img = soup.find('img')
+        return img['src'] if img and 'src' in img.attrs else ''
+    except Exception as e:
+        logger.error(f"Error extracting image URL: {str(e)}")
+        return ''
 
 def format_story(story: Dict[str, Any]) -> Dict[str, Any]:
-    """Format a story dictionary with required fields."""
-    return {
-        'title': clean_text(story.get('title', '')),
-        'url': story.get('url', ''),
-        'summary': clean_text(story.get('summary', '')),
-        'image': story.get('image', ''),
-        'source': story.get('source', ''),
-        'tags': story.get('tags', [])
-    }
+    """Format and clean a story object."""
+    try:
+        # Clean text fields
+        story['title'] = clean_text(story.get('title', ''))
+        story['summary'] = clean_text(story.get('summary', ''))
+        
+        # Ensure URL is absolute
+        if story.get('url') and not story['url'].startswith(('http://', 'https://')):
+            story['url'] = f"https://{story['url']}"
+        
+        # Clean and validate image URL
+        if story.get('image'):
+            if not story['image'].startswith(('http://', 'https://')):
+                story['image'] = f"https://{story['image']}"
+        else:
+            story['image'] = ''
+        
+        # Add timestamp if not present
+        if not story.get('published'):
+            story['published'] = datetime.now().isoformat()
+        
+        return story
+    except Exception as e:
+        logger.error(f"Error formatting story: {str(e)}")
+        return story
