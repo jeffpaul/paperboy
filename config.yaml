@@ -1,0 +1,42 @@
+project:
+  name: My 7
+  max_articles: 7
+  summary_length: short
+  timezone: America/New_York
+
+sources:
+  - name: The Washington Post
+    url: https://www.washingtonpost.com/rss/
+    type: rss
+    tags: [national, politics]
+    include_images: true
+
+  - name: The Verge
+    url: https://www.theverge.com/rss/index.xml
+    type: rss
+    tags: [tech, culture]
+    include_images: true
+
+  - name: Hacker News
+    url: https://news.ycombinator.com/
+    type: html
+    custom_parser: true
+    include_images: false
+    tags: [tech, startups]
+
+  - name: BBC News
+    url: https://www.bbc.com/news
+    type: html
+    tags: [world, general]
+    include_images: true
+
+  - name: TechCrunch
+    url: https://techcrunch.com/feed/
+    type: rss
+    tags: [tech, startups]
+    include_images: true
+
+email:
+  from: "My 7 Newsletter <newsletter@yourdomain.com>"
+  to: "your-email@example.com"
+  subject: "My 7 - {{ date }}"

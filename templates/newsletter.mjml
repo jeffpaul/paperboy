@@ -1,0 +1,51 @@
+<mjml>
+  <mj-head>
+    <mj-title>My 7 - Daily Newsletter</mj-title>
+    <mj-font name="Roboto" href="https://fonts.googleapis.com/css?family=Roboto" />
+    <mj-attributes>
+      <mj-all font-family="Roboto, Helvetica, sans-serif" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f4f4f4">
+    <mj-section background-color="#ffffff" padding="20px 0">
+      <mj-column>
+        <mj-text font-size="24px" color="#333333" align="center" font-weight="bold">
+          My 7
+        </mj-text>
+        <mj-text font-size="16px" color="#666666" align="center">
+          {{ date }}
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    {% for story in stories %}
+    <mj-section background-color="#ffffff" padding="20px 0">
+      <mj-column>
+        {% if story.image %}
+        <mj-image src="{{ story.image }}" alt="{{ story.title }}" />
+        {% endif %}
+        <mj-text font-size="18px" font-weight="bold" color="#333333">
+          {{ story.title }}
+        </mj-text>
+        <mj-text font-size="14px" color="#666666" line-height="1.5">
+          {{ story.summary }}
+        </mj-text>
+        <mj-button href="{{ story.url }}" background-color="#007acc" color="white">
+          Read more
+        </mj-button>
+        <mj-text font-size="12px" color="#999999">
+          Source: {{ story.source }}
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    {% endfor %}
+
+    <mj-section background-color="#f4f4f4" padding="20px 0">
+      <mj-column>
+        <mj-text font-size="12px" color="#999999" align="center">
+          © {{ year }} My 7 Newsletter. All rights reserved.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
