@@ -43,6 +43,11 @@ A free, automated, daily email newsletter that delivers 7 timely stories from cu
    EMAIL_TO=your-email@example.com
    ```
 
+6. Run the newsletter generation:
+   ```bash
+   python send_email.py
+   ```
+
 ### GitHub Actions Setup
 
 1. Fork this repository
@@ -52,7 +57,7 @@ A free, automated, daily email newsletter that delivers 7 timely stories from cu
    - `EMAIL_FROM`: The sender email address
    - `EMAIL_TO`: The recipient email address
 
-3. The workflow will run daily at 7am EST (11am UTC)
+3. The workflow will run daily at 8 AM UTC and send the newsletter to your email.
 
 ## Configuration
 
@@ -80,3 +85,7 @@ Edit `config.yaml` to customize:
 ## Contributing
 
 Feel free to submit issues and enhancement requests! 
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details. 
