@@ -6,7 +6,7 @@ on:
   workflow_dispatch:  # Allow manual triggers
 
 jobs:
-  send-test-email:
+  generate-newsletter:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,11 +20,45 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip list  # Debug: Show installed packages
+          
+      # TODO: Uncomment when ready to implement full newsletter functionality
+      # - name: Install MJML
+      #   run: |
+      #     npm install -g mjml
+      #     mjml --version  # Debug: Show MJML version
+          
+      # - name: Install and start Ollama
+      #   run: |
+      #     curl -fsSL https://ollama.com/install.sh | sh
+      #     ollama serve &
+      #     sleep 15  # Give Ollama more time to start
+      #     ollama list  # Debug: Show available models
+      #     ollama pull mixtral
           
       - name: Send test email
         env:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          PYTHONPATH: ${{ github.workspace }}
         run: |
-          python send_email.py
+          # Debug: Show environment
+          echo "Python version:"
+          python --version
+          echo "Current directory:"
+          pwd
+          echo "Directory contents:"
+          ls -la
+          
+          # Run with verbose logging
+          python -u send_email.py --verbose
+          
+      - name: Check for errors
+        if: failure()
+        run: |
+          echo "Workflow failed. Checking logs..."
+          echo "Directory contents:"
+          ls -la
+          echo "Output directory contents:"
+          ls -la output/ || echo "No output directory found"
