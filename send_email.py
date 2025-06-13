@@ -4,7 +4,7 @@ import logging
 import argparse
 from datetime import datetime
 from dotenv import load_dotenv
-from resend import Resend
+from resend.client import Resend
 # from utils import ensure_dir
 # from crawler.scrape import get_stories
 # from ai.summarize import summarize_stories
@@ -31,6 +31,14 @@ def main():
     # Load environment variables
     load_dotenv()
     
+    # Debug: Print environment variables (without values)
+    logger.debug("Environment variables:")
+    for var in ['RESEND_API_KEY', 'EMAIL_FROM', 'EMAIL_TO']:
+        if os.getenv(var):
+            logger.debug(f"{var} is set")
+        else:
+            logger.debug(f"{var} is not set")
+    
     # Get API key from environment
     api_key = os.getenv('RESEND_API_KEY')
     if not api_key:
@@ -45,8 +53,15 @@ def main():
         logger.error("EMAIL_FROM and EMAIL_TO must be set in environment variables")
         sys.exit(1)
     
+    logger.info(f"Sending email from {email_from} to {email_to}")
+    
     # Initialize Resend client
-    resend = Resend(api_key)
+    try:
+        resend = Resend(api_key)
+        logger.debug("Resend client initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize Resend client: {str(e)}")
+        sys.exit(1)
     
     # Simple test email content
     html_content = """
@@ -65,6 +80,7 @@ def main():
     
     try:
         # Send email
+        logger.debug("Attempting to send email...")
         response = resend.emails.send({
             "from": email_from,
             "to": email_to,
