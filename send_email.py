@@ -4,7 +4,7 @@ import logging
 import argparse
 from datetime import datetime
 from dotenv import load_dotenv
-from resend import Resend
+from resend.client import Resend
 # from utils import ensure_dir
 # from crawler.scrape import get_stories
 # from ai.summarize import summarize_stories
