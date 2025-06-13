@@ -54,7 +54,9 @@ jobs:
           echo "Installed packages:"
           pip list
           echo "Resend package structure:"
-          python -c "import resend; print('Resend package location:', resend.__file__); print('Resend package contents:', dir(resend))"
+          python -c "import resend; print('Resend package location:', resend.__file__); print('Resend package contents:', dir(resend)); print('Resend package version:', resend.__version__)"
+          echo "Resend package files:"
+          python -c "import os; import resend; print(os.listdir(os.path.dirname(resend.__file__)))"
           
       - name: Send test email
         env:
