@@ -53,8 +53,8 @@ jobs:
           python -c "import sys; print('\n'.join(sys.path))"
           echo "Installed packages:"
           pip list
-          echo "Resend package structure:"
-          python -c "import resend; print('Resend package location:', resend.__file__); print('Resend package contents:', dir(resend)); print('Resend package version:', resend.__version__)"
+          echo "Resend package details:"
+          python -c "import resend; print('Package location:', resend.__file__); print('Package version:', getattr(resend, '__version__', 'unknown')); print('Package contents:', [x for x in dir(resend) if not x.startswith('_')])"
           echo "Resend package files:"
           python -c "import os; import resend; print(os.listdir(os.path.dirname(resend.__file__)))"
           

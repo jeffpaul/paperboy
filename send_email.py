@@ -4,7 +4,7 @@ import logging
 import argparse
 from datetime import datetime
 from dotenv import load_dotenv
-import resend  # Simplified import
+from resend import Resend  # Back to basic import
 # from utils import ensure_dir
 # from crawler.scrape import get_stories
 # from ai.summarize import summarize_stories
@@ -57,7 +57,7 @@ def main():
     
     # Initialize Resend client
     try:
-        resend_client = resend.Client(api_key)  # Updated client initialization
+        resend = Resend(api_key)  # Simplified client initialization
         logger.debug("Resend client initialized successfully")
     except Exception as e:
         logger.error(f"Failed to initialize Resend client: {str(e)}")
@@ -81,13 +81,15 @@ def main():
     try:
         # Send email
         logger.debug("Attempting to send email...")
-        response = resend_client.emails.send({  # Using resend_client
+        params = {
             "from": email_from,
             "to": email_to,
             "subject": "Paperboy Test Email",
             "html": html_content,
             "text": text_content
-        })
+        }
+        logger.debug(f"Email parameters: {params}")
+        response = resend.emails.send(params)
         logger.info("Email sent successfully!")
         logger.debug(f"Email response: {response}")
     except Exception as e:
