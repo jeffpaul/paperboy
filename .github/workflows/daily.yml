@@ -3,7 +3,7 @@ name: Daily Newsletter
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 8 * * *'  # Run at 8 AM UTC daily
+    - cron: '0 0 * * *'  # Run at midnight UTC every day
 
 jobs:
   generate-newsletter:
@@ -63,7 +63,7 @@ jobs:
       - name: Send test email
         env:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          EMAIL_FROM: "Paperboy <onboarding@resend.dev>"  # Using Resend's sandbox domain
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
         run: |
           echo "Running send_email.py with verbose logging..."
