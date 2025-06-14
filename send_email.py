@@ -55,14 +55,14 @@ def main():
     
     logger.info(f"Sending email from {email_from} to {email_to}")
     
-    # Initialize Resend client
+    # Initialize Resend
     try:
         # Debug: Print available attributes
         logger.debug(f"Available resend attributes: {[x for x in dir(resend) if not x.startswith('_')]}")
-        resend_client = resend.Client(api_key)  # Try using Client class
-        logger.debug("Resend client initialized successfully")
+        resend.api_key = api_key  # Set the API key
+        logger.debug("Resend API key set successfully")
     except Exception as e:
-        logger.error(f"Failed to initialize Resend client: {str(e)}")
+        logger.error(f"Failed to set Resend API key: {str(e)}")
         sys.exit(1)
     
     # Simple test email content
@@ -91,7 +91,7 @@ def main():
             "text": text_content
         }
         logger.debug(f"Email parameters: {params}")
-        response = resend_client.emails.send(params)
+        response = resend.emails.send(params)  # Use the emails module directly
         logger.info("Email sent successfully!")
         logger.debug(f"Email response: {response}")
     except Exception as e:
