@@ -57,6 +57,8 @@ jobs:
           python -c "import resend; print('Package location:', resend.__file__); print('Package version:', getattr(resend, '__version__', 'unknown')); print('Package contents:', [x for x in dir(resend) if not x.startswith('_')])"
           echo "Resend package files:"
           python -c "import os; import resend; print(os.listdir(os.path.dirname(resend.__file__)))"
+          echo "Resend package init contents:"
+          python -c "import resend; print(open(resend.__file__).read())"
           
       - name: Send test email
         env:
