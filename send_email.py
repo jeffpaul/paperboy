@@ -91,7 +91,9 @@ def main():
             "text": text_content
         }
         logger.debug(f"Email parameters: {params}")
-        response = resend.emails.send(params)  # Use the emails module directly
+        # Create Emails instance and send
+        emails = resend.Emails()
+        response = emails.send(params)
         logger.info("Email sent successfully!")
         logger.debug(f"Email response: {response}")
     except Exception as e:
