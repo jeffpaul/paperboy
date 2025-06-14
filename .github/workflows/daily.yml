@@ -60,30 +60,29 @@ jobs:
           echo "Resend package init contents:"
           python -c "import resend; print(open(resend.__file__).read())"
           
-      - name: Send test email
-        env:
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-          EMAIL_FROM: "Paperboy <onboarding@resend.dev>"  # Using Resend's sandbox domain
-          EMAIL_TO: ${{ secrets.EMAIL_TO }}
-        run: |
-          echo "Running send_email.py with verbose logging..."
-          python send_email.py --verbose
-          
-      # TODO: Uncomment when ready to implement full newsletter functionality
-      # - name: Install MJML
-      #   run: npm install -g mjml
-      #   
-      # - name: Install Ollama
-      #   run: |
-      #     curl -fsSL https://ollama.com/install.sh | sh
-      #     ollama serve &
-      #     sleep 10  # Wait for Ollama to start
-      #     ollama pull mixtral
-      #     
-      # - name: Generate newsletter
+      # - name: Send test email
       #   env:
       #     RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-      #     EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+      #     EMAIL_FROM: "Paperboy <onboarding@resend.dev>"  # Using Resend's sandbox domain
       #     EMAIL_TO: ${{ secrets.EMAIL_TO }}
       #   run: |
-      #     python send_email.py
+      #     echo "Running send_email.py with verbose logging..."
+      #     python send_email.py --verbose
+          
+      - name: Install MJML
+        run: npm install -g mjml
+        
+      - name: Install Ollama
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+          ollama serve &
+          sleep 10  # Wait for Ollama to start
+          ollama pull mixtral
+          
+      - name: Generate newsletter
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+        run: |
+          python send_email.py
